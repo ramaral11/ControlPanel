@@ -8,7 +8,7 @@
 int main(int argc, char* argv[])
 {
 	int res;
-	unsigned char buf[100];
+	unsigned char buf[400];
 	wchar_t wstr[MAX_STR];
 	hid_device *handle;
 	int i;
@@ -43,10 +43,10 @@ int main(int argc, char* argv[])
 
 	
 	// Read requested state
-	res = hid_read(handle, buf, 100);
+	res = hid_read(handle, buf, 400);
 
 	// Print out the returned buffer.
-	for (i = 0; i < 100; i++)
+	for (i = 0; i < 400; i++)
 		printf("buf[%d]: %d\n", i, buf[i]);
 
 	// Close the device
