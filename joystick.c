@@ -1,68 +1,68 @@
-#include <stdio.h>
-#include <libusb-1.0/libusb.h>
+#include <stdio.h> // printf
+#include <wchar.h> // wchar_t
 
-#define VENDOR_ID 0x068E   // Ersetzen Sie VendorID durch die ID Ihres Joysticks
-#define PRODUCT_ID 0x0105 // Ersetzen Sie ProductID durch die ID Ihres Joysticks
+#include <hidapi.h>
 
-int main() {
-    libusb_device_handle *dev_handle;
-    int error;
+#define MAX_STR 255
 
-    // Initialisieren Sie libusb
-    error = libusb_init(NULL);
-    if (error < 0) {
-        fprintf(stderr, "Fehler beim Initialisieren von libusb: %s\n", libusb_strerror(error));
-        return 1;
-    }
+int main(int argc, char* argv[])
+{
+	int res;
+	unsigned char buf[65];
+	wchar_t wstr[MAX_STR];
+	hid_device *handle;
+	int i;
 
-    // Öffnen Sie das USB-Gerät anhand von Vendor ID und Product ID
-    dev_handle = libusb_open_device_with_vid_pid(NULL, VENDOR_ID, PRODUCT_ID);
-    if (!dev_handle) {
-        fprintf(stderr, "Joystick nicht gefunden.\n");
-        libusb_exit(NULL);
-        return 1;
-    }
+	// Initialize the hidapi library
+	res = hid_init();
 
-    // Setzen Sie die Konfiguration des USB-Geräts (in der Regel 1 für HID-Geräte)
-    error = libusb_set_configuration(dev_handle, 1);
-    if (error < 0) {
-        fprintf(stderr, "Fehler beim Setzen der Konfiguration: %s\n", libusb_strerror(error));
-        libusb_close(dev_handle);
-        libusb_exit(NULL);
-        return 1;
-    }
+	// Open the device using the VID, PID,
+	// and optionally the Serial number.
+	handle = hid_open(0x4d8, 0x3f, NULL);
+	if (!handle) {
+		printf("Unable to open device\n");
+		hid_exit();
+ 		return 1;
+	}
 
-    // Kernel-Treiber abhängen (falls erforderlich)
-    libusb_detach_kernel_driver(dev_handle, 0);
+	// Read the Manufacturer String
+	res = hid_get_manufacturer_string(handle, wstr, MAX_STR);
+	printf("Manufacturer String: %ls\n", wstr);
 
-    // Clipping-Flags löschen (falls erforderlich)
-    error = libusb_claim_interface(dev_handle, 0);
-    if (error < 0) {
-        fprintf(stderr, "Fehler beim Beanspruchen der Schnittstelle: %s\n", libusb_strerror(error));
-        libusb_close(dev_handle);
-        libusb_exit(NULL);
-        return 1;
-    }
+	// Read the Product String
+	res = hid_get_product_string(handle, wstr, MAX_STR);
+	printf("Product String: %ls\n", wstr);
 
-    // Endlosschleife zum Lesen von Joystick-Daten
-    while (1) {
-        unsigned char data[8];
-        int transferred;
+	// Read the Serial Number String
+	res = hid_get_serial_number_string(handle, wstr, MAX_STR);
+	printf("Serial Number String: (%d) %ls\n", wstr[0], wstr);
 
-        error = libusb_interrupt_transfer(dev_handle, 0x81, data, sizeof(data), &transferred, 1000);
+	// Read Indexed String 1
+	res = hid_get_indexed_string(handle, 1, wstr, MAX_STR);
+	printf("Indexed String 1: %ls\n", wstr);
 
-        if (error == 0 && transferred == sizeof(data)) {
-            // Daten erfolgreich gelesen, hier können Sie die Daten auswerten und ausgeben
-            printf("Joystick-Daten: %02x %02x %02x %02x %02x %02x %02x %02x\n",
-                   data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
-        } else if (error != LIBUSB_ERROR_TIMEOUT) {
-            fprintf(stderr, "Fehler beim Lesen der Joystick-Daten: %s\n", libusb_strerror(error));
-        }
-    }
+	// Toggle LED (cmd 0x80). The first byte is the report number (0x0).
+	buf[0] = 0x0;
+	buf[1] = 0x80;
+	res = hid_write(handle, buf, 65);
 
-    // Aufräumen und Gerätefreigabe
-    libusb_close(dev_handle);
-    libusb_exit(NULL);
+	// Request state (cmd 0x81). The first byte is the report number (0x0).
+	buf[0] = 0x0;
+	buf[1] = 0x81;
+	res = hid_write(handle, buf, 65);
 
-    return 0;
+	// Read requested state
+	res = hid_read(handle, buf, 65);
+
+	// Print out the returned buffer.
+	for (i = 0; i < 4; i++)
+		printf("buf[%d]: %d\n", i, buf[i]);
+
+	// Close the device
+	hid_close(handle);
+
+	// Finalize the hidapi library
+	res = hid_exit();
+
+	return 0;
 }
