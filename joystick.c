@@ -8,7 +8,7 @@
 int main(int argc, char* argv[])
 {
 	int res;
-	unsigned char buf[65];
+	unsigned char buf[100];
 	wchar_t wstr[MAX_STR];
 	hid_device *handle;
 	int i;
@@ -41,21 +41,12 @@ int main(int argc, char* argv[])
 	res = hid_get_indexed_string(handle, 1, wstr, MAX_STR);
 	printf("Indexed String 1: %ls\n", wstr);
 
-	// Toggle LED (cmd 0x80). The first byte is the report number (0x0).
-	buf[0] = 0x0;
-	buf[1] = 0x80;
-	res = hid_write(handle, buf, 65);
-
-	// Request state (cmd 0x81). The first byte is the report number (0x0).
-	buf[0] = 0x0;
-	buf[1] = 0x81;
-	res = hid_write(handle, buf, 65);
-
+	
 	// Read requested state
-	res = hid_read(handle, buf, 65);
+	res = hid_read(handle, buf, 100);
 
 	// Print out the returned buffer.
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < 100; i++)
 		printf("buf[%d]: %d\n", i, buf[i]);
 
 	// Close the device
