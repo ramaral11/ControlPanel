@@ -1,7 +1,7 @@
 #include <stdio.h> // printf
 #include <wchar.h> // wchar_t
 
-#include <hidapi.h>
+#include <hidapi/hidapi.h>
 
 #define MAX_STR 255
 
