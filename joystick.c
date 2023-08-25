@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <libusb-1.0/libusb.h>
 
-#define VENDOR_ID 0x068e   // Ersetzen Sie VendorID durch die ID Ihres Joysticks
+#define VENDOR_ID 0x068E   // Ersetzen Sie VendorID durch die ID Ihres Joysticks
 #define PRODUCT_ID 0x0105 // Ersetzen Sie ProductID durch die ID Ihres Joysticks
 
 int main() {
